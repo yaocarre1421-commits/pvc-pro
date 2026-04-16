@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import json
 import os
-import math  # 🔥 IMPORTANTE
+import math
 
 app = Flask(__name__)
 app.secret_key = "pvc_pro_secret"
@@ -11,18 +11,18 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-USUARIOS = "usuarios_web.json"
-CLIENTES = "clientes.json"
+USUARIOS_FILE = "usuarios.json"
 
-# Crear archivos si no existen
-for archivo in [USUARIOS, CLIENTES]:
-    if not os.path.exists(archivo):
-        with open(archivo, "w") as f:
-            json.dump([], f)
+# -------------------------
+# CREAR USUARIOS SI NO EXISTE
+# -------------------------
+if not os.path.exists(USUARIOS_FILE):
+    with open(USUARIOS_FILE, "w") as f:
+        json.dump([{"usuario": "admin", "password": "1234"}], f)
 
-# ========================
-# 🔐 USUARIOS
-# ========================
+# -------------------------
+# LOGIN
+# -------------------------
 class User(UserMixin):
     def __init__(self, id):
         self.id = id
@@ -31,141 +31,129 @@ class User(UserMixin):
 def load_user(user_id):
     return User(user_id)
 
-def cargar_usuarios():
-    with open(USUARIOS, "r") as f:
-        return json.load(f)
+def validar_usuario(user, password):
+    with open(USUARIOS_FILE) as f:
+        usuarios = json.load(f)
 
-def guardar_usuarios(data):
-    with open(USUARIOS, "w") as f:
-        json.dump(data, f, indent=4)
+    for u in usuarios:
+        if u["usuario"] == user and u["password"] == password:
+            return True
+    return False
 
-# ========================
-# 👤 CLIENTES
-# ========================
-def cargar_clientes():
-    with open(CLIENTES, "r") as f:
-        return json.load(f)
+# -------------------------
+# CALCULAR LÁMINAS
+# -------------------------
+def calcular_laminas(ancho, largo, orientacion, ancho_lamina, largo_lamina):
 
-def guardar_clientes(data):
-    with open(CLIENTES, "w") as f:
-        json.dump(data, f, indent=4)
+    if orientacion == "largo":
+        tiras = math.ceil(ancho / ancho_lamina)
+        piezas = math.floor(largo_lamina / largo)
+    else:
+        tiras = math.ceil(largo / ancho_lamina)
+        piezas = math.floor(largo_lamina / ancho)
 
-# ========================
-# 🏠 DASHBOARD + COTIZADOR
-# ========================
+    if piezas == 0:
+        return 0
+
+    return math.ceil(tiras / piezas)
+
+# -------------------------
+# DASHBOARD
+# -------------------------
 @app.route("/", methods=["GET", "POST"])
 @login_required
-def home():
-    clientes = cargar_clientes()
-    resultado = None
+def dashboard():
+
+    resultado = ""
 
     if request.method == "POST":
+
+        # ---------------- MEDIDAS ----------------
         ancho = float(request.form["ancho"])
         largo = float(request.form["largo"])
+        orientacion = request.form["orientacion"]
 
+        # ---------------- MATERIALES ----------------
+        ancho_lamina = float(request.form["ancho_lamina"])
+        largo_lamina = float(request.form["largo_lamina"])
+
+        separacion_omegas = float(request.form["separacion_omegas"])
+        largo_omega = float(request.form["largo_omega"])
+
+        cornisa = float(request.form["cornisa"])
+        angulo_perimetral = float(request.form["angulo_perimetral"])
+
+        clavos_m2 = float(request.form["clavos_m2"])
+        tornillos_m2 = float(request.form["tornillos_m2"])
+
+        precio_m2 = float(request.form["precio_m2"])
+
+        # ---------------- CÁLCULOS ----------------
         area = ancho * largo
+
+        laminas = calcular_laminas(ancho, largo, orientacion, ancho_lamina, largo_lamina)
+
         perimetro = 2 * (ancho + largo)
 
-        lam_ancho = float(request.form["lam_ancho"])
-        lam_largo = float(request.form["lam_largo"])
-        sep = float(request.form["sep"])
-        omega_largo = float(request.form["omega_largo"])
-        cornisa_largo = float(request.form["cornisa"])
-        angulo_largo = float(request.form["angulo"])
-        precio = float(request.form["precio"])
-        clavos_m2 = float(request.form["clavos"])
-        tornillos_m2 = float(request.form["tornillos"])
+        cornisas = math.ceil(perimetro / cornisa)
+        angulos = math.ceil(perimetro / angulo_perimetral)
 
-        # 🔥 CÁLCULOS PROFESIONALES
-        laminas = math.ceil(ancho / lam_ancho) * math.ceil(largo / lam_largo)
-
-        lineas = math.ceil(largo / sep)
-        omegas = math.ceil((lineas * ancho) / omega_largo)
-
-        cornisas = math.ceil(perimetro / cornisa_largo)
-        angulos = math.ceil(perimetro / angulo_largo)
+        omegas = math.ceil(area / (separacion_omegas * 1))
 
         clavos = math.ceil(area * clavos_m2)
         tornillos = math.ceil(area * tornillos_m2)
 
-        total = area * precio
+        costo = area * precio_m2
 
-        resultado = {
-            "area": round(area, 2),
-            "laminas": laminas,
-            "omegas": omegas,
-            "cornisas": cornisas,
-            "angulos": angulos,
-            "clavos": clavos,
-            "tornillos": tornillos,
-            "total": int(total),
-            "ancho": ancho,
-            "largo": largo
-        }
+        # ---------------- RESULTADO ----------------
+        resultado = f"""
+👤 Cliente: {current_user.id}
 
-    return render_template("dashboard.html", clientes=clientes, resultado=resultado)
+📐 ÁREA TOTAL: {area} m²
 
-# ========================
-# 🔐 LOGIN
-# ========================
+🧱 MATERIALES:
+- Láminas PVC: {laminas}
+- Cornisas: {cornisas}
+- Ángulos perimetrales: {angulos}
+- Omegas: {omegas}
+- Clavos: {clavos}
+- Tornillos: {tornillos}
+
+💰 COSTO TOTAL ESTIMADO:
+${costo}
+
+📊 Orientación: {orientacion}
+"""
+
+    return render_template("dashboard.html", resultado=resultado, usuario=current_user.id)
+
+# -------------------------
+# LOGIN
+# -------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
         user = request.form["usuario"]
-        pwd = request.form["password"]
+        password = request.form["password"]
 
-        usuarios = cargar_usuarios()
-
-        for u in usuarios:
-            if u["usuario"] == user and u["password"] == pwd:
-                login_user(User(user))
-                return redirect(url_for("home"))
-
-        return "Datos incorrectos"
+        if validar_usuario(user, password):
+            login_user(User(user))
+            return redirect(url_for("dashboard"))
 
     return render_template("login.html")
 
-# ========================
-# 📝 REGISTRO
-# ========================
-@app.route("/registro", methods=["GET", "POST"])
-def registro():
-    if request.method == "POST":
-        user = request.form["usuario"]
-        pwd = request.form["password"]
-
-        usuarios = cargar_usuarios()
-        usuarios.append({"usuario": user, "password": pwd})
-        guardar_usuarios(usuarios)
-
-        return redirect(url_for("login"))
-
-    return render_template("registro.html")
-
-# ========================
-# 👤 CLIENTES
-# ========================
-@app.route("/clientes", methods=["POST"])
-@login_required
-def clientes():
-    nombre = request.form["nombre"]
-    telefono = request.form["telefono"]
-
-    data = cargar_clientes()
-    data.append({"nombre": nombre, "telefono": telefono})
-    guardar_clientes(data)
-
-    return redirect(url_for("home"))
-
-# ========================
-# 🚪 LOGOUT
-# ========================
+# -------------------------
+# LOGOUT
+# -------------------------
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for("login"))
+    return redirect("/login")
 
-# ========================
+# -------------------------
+# EJECUTAR
+# -------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True)

@@ -1,134 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <title>PVC PRO</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body>
+<body style="font-family: Arial; background:#f2f2f2; padding:20px;">
 
-<div class="container">
+    <!-- ENCABEZADO -->
+    <div style="text-align:center;">
+        <h1>PVC PRO</h1>
+        <h3>Bienvenido, {{ usuario }}</h3>
+        <a href="/logout">Cerrar sesión</a>
+    </div>
 
-<h1>PVC PRO</h1>
+    <hr>
 
-<a href="/logout">Cerrar sesión</a>
+    <!-- COTIZADOR -->
+    <div style="background:white; padding:20px; width:550px; margin:auto; border-radius:10px;">
 
-<div class="card">
-<h2>📐 Cotizador PVC</h2>
+        <h2>📐 Cotizador PVC</h2>
 
-<form method="POST">
+        <form method="POST">
 
-<label>Ancho del cuarto (m)</label>
-<input name="ancho" required>
+            <!-- 🏠 MEDIDAS DEL CUARTO -->
+            <h3>🏠 Medidas del cuarto</h3>
+            <input type="number" step="any" name="ancho" placeholder="Ancho del cuarto (m)" required><br><br>
+            <input type="number" step="any" name="largo" placeholder="Largo del cuarto (m)" required><br><br>
 
-<label>Largo del cuarto (m)</label>
-<input name="largo" required>
+            <!-- 🧱 LÁMINAS PVC -->
+            <h3>🧱 Láminas PVC</h3>
 
+            <label>Orientación de instalación:</label><br>
+            <select name="orientacion" required>
+                <option value="largo">Instalar láminas a lo largo del cuarto</option>
+                <option value="ancho">Instalar láminas a lo ancho del cuarto</option>
+            </select><br><br>
+
+            <input type="number" step="any" name="ancho_lamina" value="0.25" placeholder="Ancho de lámina PVC (m)"><br><br>
+            <input type="number" step="any" name="largo_lamina" value="3" placeholder="Largo de lámina PVC (m)"><br><br>
+
+            <!-- 🔩 ESTRUCTURA (OMEGAS) -->
+            <h3>🔩 Estructura (Omega)</h3>
+            <input type="number" step="any" name="separacion_omegas" value="0.40" placeholder="Separación entre omegas (m)"><br><br>
+            <input type="number" step="any" name="largo_omega" value="3" placeholder="Largo de omega (m)"><br><br>
+
+            <!-- 🧩 TERMINACIONES -->
+            <h3>🧩 Terminaciones</h3>
+            <input type="number" step="any" name="cornisa" value="5.95" placeholder="Cornisa (m)"><br><br>
+            <input type="number" step="any" name="angulo_perimetral" value="2.40" placeholder="Ángulo perimetral (m)"><br><br>
+
+            <!-- 🔧 FIJACIÓN -->
+            <h3>🔧 Fijación</h3>
+            <input type="number" step="any" name="clavos_m2" value="18" placeholder="Clavos por m²"><br><br>
+            <input type="number" step="any" name="tornillos_m2" value="12" placeholder="Tornillos por m²"><br><br>
+
+            <!-- 💰 PRECIO -->
+            <h3>💰 Precio</h3>
+            <input type="number" step="any" name="precio_m2" value="15000" placeholder="Precio por m²"><br><br>
+
+            <button type="submit">💰 Calcular Cotización</button>
+
+        </form>
+    </div>
+
+    <hr>
+
+    <!-- CLIENTES -->
+    <div style="background:white; padding:20px; width:550px; margin:auto; border-radius:10px;">
+
+        <h2>👤 Clientes</h2>
+
+        <input type="text" placeholder="Nombre del cliente"><br><br>
+        <input type="text" placeholder="Teléfono"><br><br>
+
+        <button>Guardar Cliente</button>
+
+    </div>
+
+    <!-- RESULTADO -->
+    {% if resultado %}
+        <div style="background:black; color:#00ff88; padding:20px; width:550px; margin:20px auto; border-radius:10px;">
+            <pre>{{ resultado }}</pre>
+        </div>
+    {% endif %}
 <hr>
 
-<label>Ancho lámina PVC (m)</label>
-<input name="lam_ancho" value="0.25">
+<h2>📊 Plano de instalación</h2>
 
-<label>Largo lámina PVC (m)</label>
-<input name="lam_largo" value="3">
-
-<label>Separación de omegas (m)</label>
-<input name="sep" value="0.40">
-
-<label>Largo de omega (m)</label>
-<input name="omega_largo" value="3">
-
-<label>Cornisa (m)</label>
-<input name="cornisa" value="5.95">
-
-<label>Ángulo perimetral (m)</label>
-<input name="angulo" value="2.40">
-
-<label>Clavos por m²</label>
-<input name="clavos" value="18">
-
-<label>Tornillos por m²</label>
-<input name="tornillos" value="12">
-
-<label>Precio por m²</label>
-<input name="precio" value="15000">
-
-<button type="submit">💰 Calcular Cotización</button>
-
-</form>
-</div>
-
-{% if resultado %}
-<div class="card resultado">
-
-<h3>📊 Resultado</h3>
-
-<p>Área: {{resultado.area}} m²</p>
-<p>Láminas PVC: {{resultado.laminas}}</p>
-<p>Omegas: {{resultado.omegas}}</p>
-<p>Cornisas: {{resultado.cornisas}}</p>
-<p>Ángulos: {{resultado.angulos}}</p>
-<p>Clavos: {{resultado.clavos}}</p>
-<p>Tornillos: {{resultado.tornillos}}</p>
-
-<h2>Total: ${{resultado.total}}</h2>
-
-<canvas id="plano" width="300" height="300" style="border:1px solid #000;"></canvas>
+<canvas id="plano" width="400" height="300" style="background:#fff; border:1px solid #ccc;"></canvas>
 
 <script>
 const canvas = document.getElementById("plano");
 const ctx = canvas.getContext("2d");
 
-let ancho = {{resultado.ancho}};
-let largo = {{resultado.largo}};
+// datos del formulario
+let ancho = parseFloat("{{ request.form.get('ancho', 2) }}");
+let largo = parseFloat("{{ request.form.get('largo', 3) }}");
+let orientacion = "{{ request.form.get('orientacion', 'largo') }}";
 
-let escala = 200 / Math.max(ancho, largo);
+// escala visual
+let scale = 100;
 
-let w = ancho * escala;
-let h = largo * escala;
+// dibujar cuarto
+ctx.fillStyle = "#f2f2f2";
+ctx.fillRect(0, 0, ancho * scale, largo * scale);
 
-ctx.strokeRect(20, 20, w, h);
+ctx.strokeStyle = "#000";
+ctx.strokeRect(0, 0, ancho * scale, largo * scale);
 
-// laminas
-for (let x = 20; x < 20 + w; x += 20) {
-    ctx.beginPath();
-    ctx.moveTo(x, 20);
-    ctx.lineTo(x, 20 + h);
-    ctx.strokeStyle = "gray";
-    ctx.stroke();
-}
+// dibujar láminas
+ctx.strokeStyle = "#007bff";
 
-// omegas
-for (let y = 20; y < 20 + h; y += 30) {
-    ctx.beginPath();
-    ctx.moveTo(20, y);
-    ctx.lineTo(20 + w, y);
-    ctx.strokeStyle = "blue";
-    ctx.stroke();
+let anchoLamina = 0.25;
+
+if (orientacion === "largo") {
+
+    let num = Math.ceil(ancho / anchoLamina);
+    let step = (ancho * scale) / num;
+
+    for (let i = 0; i <= num; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * step, 0);
+        ctx.lineTo(i * step, largo * scale);
+        ctx.stroke();
+    }
+
+} else {
+
+    let num = Math.ceil(largo / anchoLamina);
+    let step = (largo * scale) / num;
+
+    for (let i = 0; i <= num; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, i * step);
+        ctx.lineTo(ancho * scale, i * step);
+        ctx.stroke();
+    }
 }
 </script>
-
-</div>
-{% endif %}
-
-<div class="card">
-<h2>👤 Clientes</h2>
-
-<form action="/clientes" method="POST">
-<input name="nombre" placeholder="Nombre del cliente">
-<input name="telefono" placeholder="Teléfono">
-<button>Guardar Cliente</button>
-</form>
-
-<ul>
-{% for c in clientes %}
-<li>{{c.nombre}} - {{c.telefono}}</li>
-{% endfor %}
-</ul>
-
-</div>
-
-</div>
-
 </body>
 </html>
