@@ -14,7 +14,7 @@ login_manager.login_view = "login"
 USUARIOS_FILE = "usuarios.json"
 
 # -------------------------
-# CREAR USUARIOS BASE
+# USUARIOS BASE
 # -------------------------
 if not os.path.exists(USUARIOS_FILE):
     with open(USUARIOS_FILE, "w") as f:
@@ -77,7 +77,7 @@ def logout():
     return redirect("/login")
 
 # -------------------------
-# CREAR USUARIO (ADMIN)
+# CREAR USUARIO
 # -------------------------
 @app.route("/crear_usuario", methods=["POST"])
 @login_required
@@ -104,7 +104,7 @@ def crear_usuario():
     return redirect("/")
 
 # -------------------------
-# DASHBOARD / COTIZADOR
+# DASHBOARD
 # -------------------------
 @app.route("/", methods=["GET", "POST"])
 @login_required
@@ -120,19 +120,35 @@ def dashboard():
 
         ancho_lamina = float(request.form["ancho_lamina"])
         largo_lamina = float(request.form["largo_lamina"])
-        separacion_omegas = float(request.form["separacion_omegas"])
 
+        separacion_omegas = float(request.form["separacion_omegas"])
         clavos_m2 = float(request.form["clavos_m2"])
         tornillos_m2 = float(request.form["tornillos_m2"])
         precio_m2 = float(request.form["precio_m2"])
 
         area = ancho * largo
 
-        # LÁMINAS
+        # -------------------------
+        # LÁMINAS CORRECTAS
+        # -------------------------
+
         if orientacion == "largo":
-            laminas = math.ceil(ancho / ancho_lamina)
+            cobertura = ancho
         else:
-            laminas = math.ceil(largo / ancho_lamina)
+            cobertura = largo
+
+        tiras_necesarias = math.ceil(cobertura / ancho_lamina)
+
+        tiras_por_lamina = math.floor(largo_lamina / ancho_lamina)
+
+        if tiras_por_lamina == 0:
+            laminas = 0
+        else:
+            laminas = math.ceil(tiras_necesarias / tiras_por_lamina)
+
+        # -------------------------
+        # RESTO DE MATERIALES
+        # -------------------------
 
         cornisas = math.ceil((2 * (ancho + largo)) / 5.95)
         angulos = math.ceil((2 * (ancho + largo)) / 2.40)
@@ -169,7 +185,7 @@ def dashboard():
     )
 
 # -------------------------
-# RUN APP
+# RUN
 # -------------------------
 if __name__ == "__main__":
     app.run(debug=True)
