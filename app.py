@@ -14,7 +14,7 @@ login_manager.login_view = "login"
 USUARIOS_FILE = "usuarios.json"
 
 # -------------------------
-# USUARIOS BASE
+# CREAR USUARIOS BASE
 # -------------------------
 if not os.path.exists(USUARIOS_FILE):
     with open(USUARIOS_FILE, "w") as f:
@@ -77,7 +77,7 @@ def logout():
     return redirect("/login")
 
 # -------------------------
-# CREAR USUARIO
+# CREAR USUARIO (ADMIN)
 # -------------------------
 @app.route("/crear_usuario", methods=["POST"])
 @login_required
@@ -128,27 +128,29 @@ def dashboard():
 
         area = ancho * largo
 
-        # -------------------------
-        # LÁMINAS CORRECTAS
-        # -------------------------
+        # ==================================================
+        # 🔥 LÁMINAS CORRECTAS (REGLA REAL DE INSTALACIÓN)
+        # ==================================================
 
         if orientacion == "largo":
-            cobertura = ancho
+            ancho_cobertura = ancho
+            largo_corte = largo
         else:
-            cobertura = largo
+            ancho_cobertura = largo
+            largo_corte = ancho
 
-        tiras_necesarias = math.ceil(cobertura / ancho_lamina)
+        # tiras necesarias en el techo
+        tiras = math.ceil(ancho_cobertura / ancho_lamina)
 
-        tiras_por_lamina = math.floor(largo_lamina / ancho_lamina)
+        # piezas que salen de una lámina completa
+        piezas_por_lamina = math.floor(largo_lamina / largo_corte)
 
-        if tiras_por_lamina == 0:
-            laminas = 0
+        if piezas_por_lamina <= 0:
+            laminas = tiras
         else:
-            laminas = math.ceil(tiras_necesarias / tiras_por_lamina)
+            laminas = math.ceil(tiras / piezas_por_lamina)
 
-        # -------------------------
-        # RESTO DE MATERIALES
-        # -------------------------
+        # ==================================================
 
         cornisas = math.ceil((2 * (ancho + largo)) / 5.95)
         angulos = math.ceil((2 * (ancho + largo)) / 2.40)
