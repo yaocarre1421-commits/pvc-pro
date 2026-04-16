@@ -14,48 +14,67 @@ login_manager.login_view = "login"
 USUARIOS_FILE = "usuarios.json"
 
 # -------------------------
-# CREAR USUARIOS SI NO EXISTE
+# CREAR USUARIOS BASE
 # -------------------------
 if not os.path.exists(USUARIOS_FILE):
     with open(USUARIOS_FILE, "w") as f:
-        json.dump([{"usuario": "admin", "password": "1234"}], f)
+        json.dump([
+            {"usuario": "admin", "password": "1234", "rol": "admin"}
+        ], f)
 
 # -------------------------
-# LOGIN
+# USER CLASS
 # -------------------------
 class User(UserMixin):
-    def __init__(self, id):
+    def __init__(self, id, rol):
         self.id = id
+        self.rol = rol
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User(user_id)
+    with open(USUARIOS_FILE) as f:
+        users = json.load(f)
+
+    for u in users:
+        if u["usuario"] == user_id:
+            return User(u["usuario"], u.get("rol", "user"))
+    return None
 
 def validar_usuario(user, password):
     with open(USUARIOS_FILE) as f:
-        usuarios = json.load(f)
+        users = json.load(f)
 
-    for u in usuarios:
+    for u in users:
         if u["usuario"] == user and u["password"] == password:
-            return True
-    return False
+            return u
+    return None
 
 # -------------------------
-# CALCULAR LÁMINAS
+# CREAR USUARIO (ADMIN)
 # -------------------------
-def calcular_laminas(ancho, largo, orientacion, ancho_lamina, largo_lamina):
+@app.route("/crear_usuario", methods=["POST"])
+@login_required
+def crear_usuario():
 
-    if orientacion == "largo":
-        tiras = math.ceil(ancho / ancho_lamina)
-        piezas = math.floor(largo_lamina / largo)
-    else:
-        tiras = math.ceil(largo / ancho_lamina)
-        piezas = math.floor(largo_lamina / ancho)
+    if current_user.rol != "admin":
+        return "No autorizado"
 
-    if piezas == 0:
-        return 0
+    nuevo = request.form["usuario"]
+    password = request.form["password"]
 
-    return math.ceil(tiras / piezas)
+    with open(USUARIOS_FILE) as f:
+        users = json.load(f)
+
+    users.append({
+        "usuario": nuevo,
+        "password": password,
+        "rol": "user"
+    })
+
+    with open(USUARIOS_FILE, "w") as f:
+        json.dump(users, f)
+
+    return redirect("/")
 
 # -------------------------
 # DASHBOARD
@@ -68,64 +87,54 @@ def dashboard():
 
     if request.method == "POST":
 
-        # ---------------- MEDIDAS ----------------
         ancho = float(request.form["ancho"])
         largo = float(request.form["largo"])
         orientacion = request.form["orientacion"]
 
-        # ---------------- MATERIALES ----------------
         ancho_lamina = float(request.form["ancho_lamina"])
         largo_lamina = float(request.form["largo_lamina"])
 
         separacion_omegas = float(request.form["separacion_omegas"])
-        largo_omega = float(request.form["largo_omega"])
-
-        cornisa = float(request.form["cornisa"])
-        angulo_perimetral = float(request.form["angulo_perimetral"])
-
         clavos_m2 = float(request.form["clavos_m2"])
         tornillos_m2 = float(request.form["tornillos_m2"])
-
         precio_m2 = float(request.form["precio_m2"])
 
-        # ---------------- CÁLCULOS ----------------
         area = ancho * largo
 
-        laminas = calcular_laminas(ancho, largo, orientacion, ancho_lamina, largo_lamina)
+        # LÁMINAS
+        if orientacion == "largo":
+            laminas = math.ceil(ancho / ancho_lamina)
+        else:
+            laminas = math.ceil(largo / ancho_lamina)
 
-        perimetro = 2 * (ancho + largo)
-
-        cornisas = math.ceil(perimetro / cornisa)
-        angulos = math.ceil(perimetro / angulo_perimetral)
-
-        omegas = math.ceil(area / (separacion_omegas * 1))
+        cornisas = math.ceil((2 * (ancho + largo)) / 5.95)
+        angulos = math.ceil((2 * (ancho + largo)) / 2.40)
+        omegas = math.ceil(area / separacion_omegas)
 
         clavos = math.ceil(area * clavos_m2)
         tornillos = math.ceil(area * tornillos_m2)
 
-        costo = area * precio_m2
+        total = area * precio_m2
 
-        # ---------------- RESULTADO ----------------
         resultado = f"""
-👤 Cliente: {current_user.id}
+👤 Usuario: {current_user.id}
 
-📐 ÁREA TOTAL: {area} m²
+📐 Área total: {area} m²
 
-🧱 MATERIALES:
+🧱 Materiales:
 - Láminas PVC: {laminas}
 - Cornisas: {cornisas}
-- Ángulos perimetrales: {angulos}
+- Ángulos: {angulos}
 - Omegas: {omegas}
 - Clavos: {clavos}
 - Tornillos: {tornillos}
 
-💰 COSTO TOTAL ESTIMADO:
-${costo}
+💰 TOTAL: ${total}
 
 📊 Orientación: {orientacion}
 """
 
-    return render_template("dashboard.html", resultado=resultado, usuario=current_user.id)
+    return render_template("dashboard.html", resultado=resultado, usuario=current_user.id, rol=current_user.rol)
 
 # -------------------------
 # LOGIN
@@ -137,9 +146,11 @@ def login():
         user = request.form["usuario"]
         password = request.form["password"]
 
-        if validar_usuario(user, password):
-            login_user(User(user))
-            return redirect(url_for("dashboard"))
+        u = validar_usuario(user, password)
+
+        if u:
+            login_user(User(u["usuario"], u.get("rol", "user")))
+            return redirect("/")
 
     return render_template("login.html")
 
@@ -151,6 +162,12 @@ def login():
 def logout():
     logout_user()
     return redirect("/login")
+
+# -------------------------
+# RUN
+# -------------------------
+if __name__ == "__main__":
+    app.run(debug=True)
 
 # -------------------------
 # EJECUTAR

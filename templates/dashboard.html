@@ -7,109 +7,87 @@
 
 <body style="font-family: Arial; background:#f2f2f2; padding:20px;">
 
-    <!-- ENCABEZADO -->
-    <div style="text-align:center;">
-        <h1>PVC PRO</h1>
-        <h3>Bienvenido, {{ usuario }}</h3>
-        <a href="/logout">Cerrar sesión</a>
-    </div>
+<!-- ENCABEZADO -->
+<div style="text-align:center;">
+    <h1>PVC PRO</h1>
+    <h3>Bienvenido, {{ usuario }}</h3>
+    <a href="/logout">Cerrar sesión</a>
+</div>
 
-    <hr>
-
-    <!-- COTIZADOR -->
-    <div style="background:white; padding:20px; width:550px; margin:auto; border-radius:10px;">
-
-        <h2>📐 Cotizador PVC</h2>
-
-        <form method="POST">
-
-            <!-- 🏠 MEDIDAS DEL CUARTO -->
-            <h3>🏠 Medidas del cuarto</h3>
-            <input type="number" step="any" name="ancho" placeholder="Ancho del cuarto (m)" required><br><br>
-            <input type="number" step="any" name="largo" placeholder="Largo del cuarto (m)" required><br><br>
-
-            <!-- 🧱 LÁMINAS PVC -->
-            <h3>🧱 Láminas PVC</h3>
-
-            <label>Orientación de instalación:</label><br>
-            <select name="orientacion" required>
-                <option value="largo">Instalar láminas a lo largo del cuarto</option>
-                <option value="ancho">Instalar láminas a lo ancho del cuarto</option>
-            </select><br><br>
-
-            <input type="number" step="any" name="ancho_lamina" value="0.25" placeholder="Ancho de lámina PVC (m)"><br><br>
-            <input type="number" step="any" name="largo_lamina" value="3" placeholder="Largo de lámina PVC (m)"><br><br>
-
-            <!-- 🔩 ESTRUCTURA (OMEGAS) -->
-            <h3>🔩 Estructura (Omega)</h3>
-            <input type="number" step="any" name="separacion_omegas" value="0.40" placeholder="Separación entre omegas (m)"><br><br>
-            <input type="number" step="any" name="largo_omega" value="3" placeholder="Largo de omega (m)"><br><br>
-
-            <!-- 🧩 TERMINACIONES -->
-            <h3>🧩 Terminaciones</h3>
-            <input type="number" step="any" name="cornisa" value="5.95" placeholder="Cornisa (m)"><br><br>
-            <input type="number" step="any" name="angulo_perimetral" value="2.40" placeholder="Ángulo perimetral (m)"><br><br>
-
-            <!-- 🔧 FIJACIÓN -->
-            <h3>🔧 Fijación</h3>
-            <input type="number" step="any" name="clavos_m2" value="18" placeholder="Clavos por m²"><br><br>
-            <input type="number" step="any" name="tornillos_m2" value="12" placeholder="Tornillos por m²"><br><br>
-
-            <!-- 💰 PRECIO -->
-            <h3>💰 Precio</h3>
-            <input type="number" step="any" name="precio_m2" value="15000" placeholder="Precio por m²"><br><br>
-
-            <button type="submit">💰 Calcular Cotización</button>
-
-        </form>
-    </div>
-
-    <hr>
-
-    <!-- CLIENTES -->
-    <div style="background:white; padding:20px; width:550px; margin:auto; border-radius:10px;">
-
-        <h2>👤 Clientes</h2>
-
-        <input type="text" placeholder="Nombre del cliente"><br><br>
-        <input type="text" placeholder="Teléfono"><br><br>
-
-        <button>Guardar Cliente</button>
-
-    </div>
-
-    <!-- RESULTADO -->
-    {% if resultado %}
-        <div style="background:black; color:#00ff88; padding:20px; width:550px; margin:20px auto; border-radius:10px;">
-            <pre>{{ resultado }}</pre>
-        </div>
-    {% endif %}
 <hr>
+
+<!-- COTIZADOR -->
+<div style="background:white; padding:20px; width:600px; margin:auto; border-radius:10px;">
+
+<h2>📐 Cotizador PVC</h2>
+
+<form method="POST">
+
+    <h3>🏠 Medidas del cuarto</h3>
+    <input type="number" step="any" name="ancho" placeholder="Ancho del cuarto (m)" required><br><br>
+    <input type="number" step="any" name="largo" placeholder="Largo del cuarto (m)" required><br><br>
+
+    <h3>🧱 Instalación</h3>
+    <select name="orientacion" required>
+        <option value="largo">Láminas a lo largo</option>
+        <option value="ancho">Láminas a lo ancho</option>
+    </select><br><br>
+
+    <h3>📏 Material PVC</h3>
+    <input type="number" step="any" name="ancho_lamina" value="0.25" placeholder="Ancho lámina PVC"><br><br>
+    <input type="number" step="any" name="largo_lamina" value="3" placeholder="Largo lámina PVC"><br><br>
+
+    <h3>🔩 Estructura</h3>
+    <input type="number" step="any" name="separacion_omegas" value="0.40" placeholder="Separación omegas"><br><br>
+
+    <h3>🔧 Fijación</h3>
+    <input type="number" step="any" name="clavos_m2" value="18" placeholder="Clavos por m²"><br><br>
+    <input type="number" step="any" name="tornillos_m2" value="12" placeholder="Tornillos por m²"><br><br>
+
+    <h3>💰 Precio</h3>
+    <input type="number" step="any" name="precio_m2" value="15000" placeholder="Precio por m²"><br><br>
+
+    <button type="submit">💰 Calcular Cotización</button>
+
+</form>
+
+</div>
+
+<!-- RESULTADO -->
+{% if resultado %}
+<div style="background:black; color:#00ff88; padding:20px; width:600px; margin:20px auto; border-radius:10px;">
+<pre>{{ resultado }}</pre>
+</div>
+{% endif %}
+
+<!-- PLANO -->
+{% if resultado %}
+<div style="background:white; padding:20px; width:600px; margin:auto; border-radius:10px; text-align:center;">
 
 <h2>📊 Plano de instalación</h2>
 
-<canvas id="plano" width="400" height="300" style="background:#fff; border:1px solid #ccc;"></canvas>
+<canvas id="plano" width="500" height="300" style="border:1px solid #ccc;"></canvas>
+
+</div>
 
 <script>
 const canvas = document.getElementById("plano");
 const ctx = canvas.getContext("2d");
 
-// datos del formulario
 let ancho = parseFloat("{{ request.form.get('ancho', 2) }}");
 let largo = parseFloat("{{ request.form.get('largo', 3) }}");
 let orientacion = "{{ request.form.get('orientacion', 'largo') }}";
 
-// escala visual
 let scale = 100;
 
-// dibujar cuarto
+// cuarto
 ctx.fillStyle = "#f2f2f2";
 ctx.fillRect(0, 0, ancho * scale, largo * scale);
 
 ctx.strokeStyle = "#000";
 ctx.strokeRect(0, 0, ancho * scale, largo * scale);
 
-// dibujar láminas
+// láminas
 ctx.strokeStyle = "#007bff";
 
 let anchoLamina = 0.25;
@@ -139,5 +117,29 @@ if (orientacion === "largo") {
     }
 }
 </script>
+{% endif %}
+
+<!-- ADMIN PANEL -->
+{% if rol == 'admin' %}
+
+<hr>
+
+<div style="background:white; padding:20px; width:600px; margin:auto; border-radius:10px;">
+
+<h2>🔐 Panel de Usuarios (Admin)</h2>
+
+<form action="/crear_usuario" method="POST">
+
+    <input type="text" name="usuario" placeholder="Nuevo usuario" required><br><br>
+    <input type="password" name="password" placeholder="Contraseña" required><br><br>
+
+    <button type="submit">Crear usuario</button>
+
+</form>
+
+</div>
+
+{% endif %}
+
 </body>
 </html>
