@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PVC PRO</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>PVC PRO</h1>
+
+<a href="/logout">Cerrar sesión</a>
+
+<div class="card">
+<h2>📐 Cotizador PVC</h2>
+
+<form method="POST">
+
+<label>Ancho del cuarto (m)</label>
+<input name="ancho" required>
+
+<label>Largo del cuarto (m)</label>
+<input name="largo" required>
+
+<hr>
+
+<label>Ancho lámina PVC (m)</label>
+<input name="lam_ancho" value="0.25">
+
+<label>Largo lámina PVC (m)</label>
+<input name="lam_largo" value="3">
+
+<label>Separación de omegas (m)</label>
+<input name="sep" value="0.40">
+
+<label>Largo de omega (m)</label>
+<input name="omega_largo" value="3">
+
+<label>Cornisa (m)</label>
+<input name="cornisa" value="5.95">
+
+<label>Ángulo perimetral (m)</label>
+<input name="angulo" value="2.40">
+
+<label>Clavos por m²</label>
+<input name="clavos" value="18">
+
+<label>Tornillos por m²</label>
+<input name="tornillos" value="12">
+
+<label>Precio por m²</label>
+<input name="precio" value="15000">
+
+<button type="submit">💰 Calcular Cotización</button>
+
+</form>
+</div>
+
+{% if resultado %}
+<div class="card resultado">
+
+<h3>📊 Resultado</h3>
+
+<p>Área: {{resultado.area}} m²</p>
+<p>Láminas PVC: {{resultado.laminas}}</p>
+<p>Omegas: {{resultado.omegas}}</p>
+<p>Cornisas: {{resultado.cornisas}}</p>
+<p>Ángulos: {{resultado.angulos}}</p>
+<p>Clavos: {{resultado.clavos}}</p>
+<p>Tornillos: {{resultado.tornillos}}</p>
+
+<h2>Total: ${{resultado.total}}</h2>
+
+<canvas id="plano" width="300" height="300" style="border:1px solid #000;"></canvas>
+
+<script>
+const canvas = document.getElementById("plano");
+const ctx = canvas.getContext("2d");
+
+let ancho = {{resultado.ancho}};
+let largo = {{resultado.largo}};
+
+let escala = 200 / Math.max(ancho, largo);
+
+let w = ancho * escala;
+let h = largo * escala;
+
+ctx.strokeRect(20, 20, w, h);
+
+// laminas
+for (let x = 20; x < 20 + w; x += 20) {
+    ctx.beginPath();
+    ctx.moveTo(x, 20);
+    ctx.lineTo(x, 20 + h);
+    ctx.strokeStyle = "gray";
+    ctx.stroke();
+}
+
+// omegas
+for (let y = 20; y < 20 + h; y += 30) {
+    ctx.beginPath();
+    ctx.moveTo(20, y);
+    ctx.lineTo(20 + w, y);
+    ctx.strokeStyle = "blue";
+    ctx.stroke();
+}
+</script>
+
+</div>
+{% endif %}
+
+<div class="card">
+<h2>👤 Clientes</h2>
+
+<form action="/clientes" method="POST">
+<input name="nombre" placeholder="Nombre del cliente">
+<input name="telefono" placeholder="Teléfono">
+<button>Guardar Cliente</button>
+</form>
+
+<ul>
+{% for c in clientes %}
+<li>{{c.nombre}} - {{c.telefono}}</li>
+{% endfor %}
+</ul>
+
+</div>
+
+</div>
+
+</body>
+</html>
