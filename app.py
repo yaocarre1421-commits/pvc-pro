@@ -1,193 +1,161 @@
-from flask import Flask, render_template, request, redirect
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask import Flask, render_template, request, redirect, url_for, session
 import json
 import os
 import math
 
 app = Flask(__name__)
-app.secret_key = "pvc_pro_secret"
+app.secret_key = "clave_secreta"
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = "login"
-
-USUARIOS_FILE = "usuarios.json"
+# Archivos
+USUARIOS_FILE = "usuarios_web.json"
+CLIENTES_FILE = "clientes.json"
 
 # -------------------------
-# CREAR USUARIOS BASE
+# UTILIDADES
 # -------------------------
-if not os.path.exists(USUARIOS_FILE):
-    with open(USUARIOS_FILE, "w") as f:
-        json.dump([
-            {"usuario": "admin", "password": "1234", "rol": "admin"}
-        ], f)
 
-# -------------------------
-# USER CLASS
-# -------------------------
-class User(UserMixin):
-    def __init__(self, id, rol):
-        self.id = id
-        self.rol = rol
+def cargar_json(ruta):
+    if not os.path.exists(ruta):
+        with open(ruta, "w") as f:
+            json.dump([], f)
+    with open(ruta, "r") as f:
+        return json.load(f)
 
-@login_manager.user_loader
-def load_user(user_id):
-    with open(USUARIOS_FILE) as f:
-        users = json.load(f)
-
-    for u in users:
-        if u["usuario"] == user_id:
-            return User(u["usuario"], u.get("rol", "user"))
-    return None
-
-def validar_usuario(user, password):
-    with open(USUARIOS_FILE) as f:
-        users = json.load(f)
-
-    for u in users:
-        if u["usuario"] == user and u["password"] == password:
-            return u
-    return None
+def guardar_json(ruta, data):
+    with open(ruta, "w") as f:
+        json.dump(data, f, indent=4)
 
 # -------------------------
 # LOGIN
 # -------------------------
+
+@app.route("/", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
 def login():
-
     if request.method == "POST":
-        user = request.form["usuario"]
+        usuario = request.form["usuario"]
         password = request.form["password"]
 
-        u = validar_usuario(user, password)
+        usuarios = cargar_json(USUARIOS_FILE)
 
-        if u:
-            login_user(User(u["usuario"], u.get("rol", "user")))
-            return redirect("/")
+        for u in usuarios:
+            if u["usuario"] == usuario and u["password"] == password:
+                session["usuario"] = usuario
+                return redirect(url_for("dashboard"))
+
+        return "❌ Usuario o contraseña incorrectos"
 
     return render_template("login.html")
 
 # -------------------------
-# LOGOUT
+# REGISTRO
 # -------------------------
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    return redirect("/login")
 
-# -------------------------
-# CREAR USUARIO (ADMIN)
-# -------------------------
-@app.route("/crear_usuario", methods=["POST"])
-@login_required
-def crear_usuario():
+@app.route("/registro", methods=["GET", "POST"])
+def registro():
+    if request.method == "POST":
+        usuario = request.form["usuario"]
+        password = request.form["password"]
 
-    if current_user.rol != "admin":
-        return "No autorizado"
+        usuarios = cargar_json(USUARIOS_FILE)
 
-    nuevo = request.form["usuario"]
-    password = request.form["password"]
+        usuarios.append({
+            "usuario": usuario,
+            "password": password
+        })
 
-    with open(USUARIOS_FILE) as f:
-        users = json.load(f)
+        guardar_json(USUARIOS_FILE, usuarios)
 
-    users.append({
-        "usuario": nuevo,
-        "password": password,
-        "rol": "user"
-    })
+        return redirect(url_for("login"))
 
-    with open(USUARIOS_FILE, "w") as f:
-        json.dump(users, f)
-
-    return redirect("/")
+    return render_template("registro.html")
 
 # -------------------------
-# DASHBOARD
+# DASHBOARD + COTIZADOR
 # -------------------------
-@app.route("/", methods=["GET", "POST"])
-@login_required
+
+@app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
 
-    resultado = ""
+    resultado = None
 
     if request.method == "POST":
-
         ancho = float(request.form["ancho"])
         largo = float(request.form["largo"])
+
+        ancho_lamina = float(request.form["ancho_lamina"])  # 0.25
+        largo_lamina = float(request.form["largo_lamina"])  # 3 a 6
+
         orientacion = request.form["orientacion"]
 
-        ancho_lamina = float(request.form["ancho_lamina"])
-        largo_lamina = float(request.form["largo_lamina"])
-
-        separacion_omegas = float(request.form["separacion_omegas"])
-        clavos_m2 = float(request.form["clavos_m2"])
-        tornillos_m2 = float(request.form["tornillos_m2"])
-        precio_m2 = float(request.form["precio_m2"])
-
+        # AREA
         area = ancho * largo
 
-        # ==================================================
-        # 🔥 LÁMINAS CORRECTAS (REGLA REAL DE INSTALACIÓN)
-        # ==================================================
-
+        # CALCULO PROFESIONAL
         if orientacion == "largo":
-            ancho_cobertura = ancho
-            largo_corte = largo
+            filas = math.ceil(ancho / ancho_lamina)
+            columnas = math.ceil(largo / largo_lamina)
         else:
-            ancho_cobertura = largo
-            largo_corte = ancho
+            filas = math.ceil(largo / ancho_lamina)
+            columnas = math.ceil(ancho / largo_lamina)
 
-        # tiras necesarias en el techo
-        tiras = math.ceil(ancho_cobertura / ancho_lamina)
+        total_laminas = filas * columnas
 
-        # piezas que salen de una lámina completa
-        piezas_por_lamina = math.floor(largo_lamina / largo_corte)
+        # DESPERDICIO
+        area_total_laminas = total_laminas * (ancho_lamina * largo_lamina)
+        desperdicio = area_total_laminas - area
 
-        if piezas_por_lamina <= 0:
-            laminas = tiras
-        else:
-            laminas = math.ceil(tiras / piezas_por_lamina)
+        # RECORTES (estimado)
+        recortes = total_laminas - (area / (ancho_lamina * largo_lamina))
 
-        # ==================================================
+        resultado = {
+            "area": round(area, 2),
+            "laminas": total_laminas,
+            "filas": filas,
+            "columnas": columnas,
+            "desperdicio": round(desperdicio, 2),
+            "recortes": round(recortes, 1)
+        }
 
-        cornisas = math.ceil((2 * (ancho + largo)) / 5.95)
-        angulos = math.ceil((2 * (ancho + largo)) / 2.40)
-        omegas = math.ceil(area / separacion_omegas)
-
-        clavos = math.ceil(area * clavos_m2)
-        tornillos = math.ceil(area * tornillos_m2)
-
-        total = area * precio_m2
-
-        resultado = f"""
-👤 Usuario: {current_user.id}
-
-📐 Área: {area} m²
-
-🧱 Materiales:
-- Láminas PVC: {laminas}
-- Cornisas: {cornisas}
-- Ángulos: {angulos}
-- Omegas: {omegas}
-- Clavos: {clavos}
-- Tornillos: {tornillos}
-
-💰 TOTAL: ${total}
-
-📊 Orientación: {orientacion}
-"""
-
-    return render_template(
-        "dashboard.html",
-        resultado=resultado,
-        usuario=current_user.id,
-        rol=current_user.rol
-    )
+    return render_template("dashboard.html", resultado=resultado)
 
 # -------------------------
-# RUN
+# CLIENTES
 # -------------------------
+
+@app.route("/clientes", methods=["POST"])
+def clientes():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+
+    nombre = request.form["nombre"]
+    telefono = request.form["telefono"]
+
+    clientes = cargar_json(CLIENTES_FILE)
+
+    clientes.append({
+        "nombre": nombre,
+        "telefono": telefono
+    })
+
+    guardar_json(CLIENTES_FILE, clientes)
+
+    return redirect(url_for("dashboard"))
+
+# -------------------------
+# LOGOUT
+# -------------------------
+
+@app.route("/logout")
+def logout():
+    session.pop("usuario", None)
+    return redirect(url_for("login"))
+
+# -------------------------
+# INICIO
+# -------------------------
+
 if __name__ == "__main__":
     app.run(debug=True)

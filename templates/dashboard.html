@@ -3,143 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <title>PVC PRO</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 
-<body style="font-family: Arial; background:#f2f2f2; padding:20px;">
+<body>
 
-<!-- ENCABEZADO -->
-<div style="text-align:center;">
-    <h1>PVC PRO</h1>
-    <h3>Bienvenido, {{ usuario }}</h3>
+<div class="header">
+    PVC PRO - Sistema Profesional
+</div>
+
+<div class="container">
+
+    <h2>Bienvenido, {{ session.usuario }}</h2>
     <a href="/logout">Cerrar sesión</a>
-</div>
 
-<hr>
+    <hr>
 
-<!-- COTIZADOR -->
-<div style="background:white; padding:20px; width:600px; margin:auto; border-radius:10px;">
+    <!-- ========================= -->
+    <!-- 📐 COTIZADOR -->
+    <!-- ========================= -->
 
-<h2>📐 Cotizador PVC</h2>
+    <h2>📐 Cotizador PVC</h2>
 
-<form method="POST">
+    <form method="POST">
 
-    <h3>🏠 Medidas del cuarto</h3>
-    <input type="number" step="any" name="ancho" placeholder="Ancho del cuarto (m)" required><br><br>
-    <input type="number" step="any" name="largo" placeholder="Largo del cuarto (m)" required><br><br>
+        <h3>📏 Medidas del espacio</h3>
+        <input type="number" step="0.01" name="ancho" placeholder="Ancho del área (m)" required>
+        <input type="number" step="0.01" name="largo" placeholder="Largo del área (m)" required>
 
-    <h3>🧱 Instalación</h3>
-    <select name="orientacion" required>
-        <option value="largo">Láminas a lo largo</option>
-        <option value="ancho">Láminas a lo ancho</option>
-    </select><br><br>
+        <h3>📦 Medidas de lámina PVC</h3>
+        <input type="number" step="0.01" name="ancho_lamina" value="0.25" placeholder="Ancho lámina (m)" required>
+        <input type="number" step="0.01" name="largo_lamina" value="3" placeholder="Largo lámina (3 a 6 m)" required>
 
-    <h3>📏 Material PVC</h3>
-    <input type="number" step="any" name="ancho_lamina" value="0.25" placeholder="Ancho lámina PVC"><br><br>
-    <input type="number" step="any" name="largo_lamina" value="3" placeholder="Largo lámina PVC"><br><br>
+        <h3>🔄 Tipo de instalación</h3>
+        <select name="orientacion">
+            <option value="largo">Láminas a lo largo</option>
+            <option value="ancho">Láminas a lo ancho</option>
+        </select>
 
-    <h3>🔩 Estructura</h3>
-    <input type="number" step="any" name="separacion_omegas" value="0.40" placeholder="Separación omegas"><br><br>
+        <button type="submit">💰 Calcular Cotización</button>
 
-    <h3>🔧 Fijación</h3>
-    <input type="number" step="any" name="clavos_m2" value="18" placeholder="Clavos por m²"><br><br>
-    <input type="number" step="any" name="tornillos_m2" value="12" placeholder="Tornillos por m²"><br><br>
+    </form>
 
-    <h3>💰 Precio</h3>
-    <input type="number" step="any" name="precio_m2" value="15000" placeholder="Precio por m²"><br><br>
+    <!-- ========================= -->
+    <!-- 📊 RESULTADO -->
+    <!-- ========================= -->
 
-    <button type="submit">💰 Calcular Cotización</button>
+    {% if resultado %}
+    <div class="resultado">
+        <h3>📊 Resultado</h3>
 
-</form>
+        <p><strong>Área:</strong> {{ resultado.area }} m²</p>
+        <p><strong>Láminas necesarias:</strong> {{ resultado.laminas }}</p>
+        <p><strong>Distribución:</strong> {{ resultado.filas }} x {{ resultado.columnas }}</p>
+        <p><strong>Desperdicio:</strong> {{ resultado.desperdicio }} m²</p>
+        <p><strong>Recortes estimados:</strong> {{ resultado.recortes }}</p>
+    </div>
+    {% endif %}
 
-</div>
+    <hr>
 
-<!-- RESULTADO -->
-{% if resultado %}
-<div style="background:black; color:#00ff88; padding:20px; width:600px; margin:20px auto; border-radius:10px;">
-<pre>{{ resultado }}</pre>
-</div>
-{% endif %}
+    <!-- ========================= -->
+    <!-- 👤 CLIENTES -->
+    <!-- ========================= -->
 
-<!-- PLANO -->
-{% if resultado %}
-<div style="background:white; padding:20px; width:600px; margin:auto; border-radius:10px; text-align:center;">
+    <h2>👤 Clientes</h2>
 
-<h2>📊 Plano de instalación</h2>
+    <form method="POST" action="/clientes">
+        <input type="text" name="nombre" placeholder="Nombre del cliente" required>
+        <input type="text" name="telefono" placeholder="Teléfono" required>
 
-<canvas id="plano" width="500" height="300" style="border:1px solid #ccc;"></canvas>
-
-</div>
-
-<script>
-const canvas = document.getElementById("plano");
-const ctx = canvas.getContext("2d");
-
-let ancho = parseFloat("{{ request.form.get('ancho', 2) }}");
-let largo = parseFloat("{{ request.form.get('largo', 3) }}");
-let orientacion = "{{ request.form.get('orientacion', 'largo') }}";
-
-let scale = 100;
-
-// cuarto
-ctx.fillStyle = "#f2f2f2";
-ctx.fillRect(0, 0, ancho * scale, largo * scale);
-
-ctx.strokeStyle = "#000";
-ctx.strokeRect(0, 0, ancho * scale, largo * scale);
-
-// láminas
-ctx.strokeStyle = "#007bff";
-
-let anchoLamina = 0.25;
-
-if (orientacion === "largo") {
-
-    let num = Math.ceil(ancho / anchoLamina);
-    let step = (ancho * scale) / num;
-
-    for (let i = 0; i <= num; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * step, 0);
-        ctx.lineTo(i * step, largo * scale);
-        ctx.stroke();
-    }
-
-} else {
-
-    let num = Math.ceil(largo / anchoLamina);
-    let step = (largo * scale) / num;
-
-    for (let i = 0; i <= num; i++) {
-        ctx.beginPath();
-        ctx.moveTo(0, i * step);
-        ctx.lineTo(ancho * scale, i * step);
-        ctx.stroke();
-    }
-}
-</script>
-{% endif %}
-
-<!-- ADMIN PANEL -->
-{% if rol == 'admin' %}
-
-<hr>
-
-<div style="background:white; padding:20px; width:600px; margin:auto; border-radius:10px;">
-
-<h2>🔐 Panel de Usuarios (Admin)</h2>
-
-<form action="/crear_usuario" method="POST">
-
-    <input type="text" name="usuario" placeholder="Nuevo usuario" required><br><br>
-    <input type="password" name="password" placeholder="Contraseña" required><br><br>
-
-    <button type="submit">Crear usuario</button>
-
-</form>
+        <button type="submit">💾 Guardar Cliente</button>
+    </form>
 
 </div>
-
-{% endif %}
 
 </body>
 </html>

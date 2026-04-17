@@ -1,53 +1,60 @@
 body {
-    font-family: Arial;
+    font-family: 'Segoe UI', sans-serif;
     background: #f4f6f9;
     margin: 0;
-    padding: 0;
 }
 
-.container {
-    width: 90%;
-    max-width: 500px;
-    margin: auto;
-}
-
-.card {
-    background: white;
+/* HEADER */
+.header {
+    background: #0d6efd;
+    color: white;
     padding: 15px;
-    margin-top: 15px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-h1, h2 {
     text-align: center;
+    font-size: 22px;
+    font-weight: bold;
 }
 
-input {
+/* CONTENEDOR */
+.container {
+    max-width: 500px;
+    margin: 40px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0px 5px 20px rgba(0,0,0,0.1);
+}
+
+/* INPUTS */
+input, select {
     width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    margin-bottom: 10px;
-    border-radius: 5px;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
     border: 1px solid #ccc;
+    font-size: 15px;
 }
 
+/* BOTONES */
 button {
     width: 100%;
     padding: 12px;
-    background: #007bff;
-    color: white;
     border: none;
     border-radius: 8px;
+    background: #0d6efd;
+    color: white;
     font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
 }
 
 button:hover {
-    background: #0056b3;
+    background: #0b5ed7;
 }
 
+/* RESULTADO */
 .resultado {
-    background: #eaf7ea;
-    padding: 10px;
-    border-radius: 8px;
+    margin-top: 20px;
+    padding: 15px;
+    background: #e9f3ff;
+    border-radius: 10px;
 }

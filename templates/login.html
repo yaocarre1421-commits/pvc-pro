@@ -1,9 +1,16 @@
-<h2>Login PVC PRO</h2>
+<link rel="stylesheet" href="/static/style.css">
 
-<form method="POST">
-    <input name="usuario" placeholder="Usuario">
-    <input name="password" type="password" placeholder="Contraseña">
-    <button>Ingresar</button>
-</form>
+<div class="header">PVC PRO</div>
 
-<a href="/registro">Registrarse</a>
+<div class="container">
+    <h2>Iniciar sesión</h2>
+
+    <form method="POST">
+        <input type="text" name="usuario" placeholder="Usuario" required>
+        <input type="password" name="password" placeholder="Contraseña" required>
+        <button>Ingresar</button>
+    </form>
+
+    <br>
+    <a href="/registro">Crear cuenta</a>
+</div>
