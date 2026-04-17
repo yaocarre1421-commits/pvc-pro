@@ -32,14 +32,17 @@
         <input type="number" step="0.01" name="largo" placeholder="Largo del área (m)" required>
 
         <h3>📦 Medidas de lámina PVC</h3>
-        <input type="number" step="0.01" name="ancho_lamina" value="0.25" placeholder="Ancho lámina (m)" required>
-        <input type="number" step="0.01" name="largo_lamina" value="3" placeholder="Largo lámina (3 a 6 m)" required>
+        <input type="number" step="0.01" name="ancho_lamina" value="0.25" required>
+        <input type="number" step="0.01" name="largo_lamina" value="3" required>
 
         <h3>🔄 Tipo de instalación</h3>
         <select name="orientacion">
             <option value="largo">Láminas a lo largo</option>
             <option value="ancho">Láminas a lo ancho</option>
         </select>
+
+        <h3>💰 Precio</h3>
+        <input type="number" name="precio_m2" value="15000" placeholder="Precio por m²" required>
 
         <button type="submit">💰 Calcular Cotización</button>
 
@@ -51,13 +54,35 @@
 
     {% if resultado %}
     <div class="resultado">
-        <h3>📊 Resultado</h3>
+
+        <h3>📊 Cotización Completa</h3>
 
         <p><strong>Área:</strong> {{ resultado.area }} m²</p>
-        <p><strong>Láminas necesarias:</strong> {{ resultado.laminas }}</p>
+
+        <hr>
+
+        <p><strong>Láminas:</strong> {{ resultado.laminas }}</p>
         <p><strong>Distribución:</strong> {{ resultado.filas }} x {{ resultado.columnas }}</p>
-        <p><strong>Desperdicio:</strong> {{ resultado.desperdicio }} m²</p>
-        <p><strong>Recortes estimados:</strong> {{ resultado.recortes }}</p>
+
+        <hr>
+
+        <p><strong>Omegas:</strong> {{ resultado.omegas }}</p>
+        <p><strong>Ángulos:</strong> {{ resultado.angulos }}</p>
+        <p><strong>Cornisas:</strong> {{ resultado.cornisas }}</p>
+
+        <hr>
+
+        <p><strong>Tornillos:</strong> {{ resultado.tornillos }}</p>
+        <p><strong>Clavos:</strong> {{ resultado.clavos }}</p>
+
+        <hr>
+
+        <h2>💰 TOTAL: ${{ resultado.total }}</h2>
+
+        <a href="/pdf">
+            <button>📄 Descargar PDF</button>
+        </a>
+
     </div>
     {% endif %}
 
